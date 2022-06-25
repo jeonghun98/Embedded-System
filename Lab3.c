@@ -202,7 +202,16 @@ int DigitalRead() {
     if (digitalRead(RIGHT) == 0) { return 32; }
     else return -1;
 }
-
+int xy[80][2] = {
+    {0,0}, {28,0}, {56,0}, {84,0}, {112,0},{140,0},{168,0}, {196,0},{224,0},{252,0},
+    {0,32}, {28,32}, {56,32}, {84,32}, {112,32},{140,32},{168,32}, {196,32},{224,32},{252,32},
+    {0,64}, {28,64}, {56,64}, {84,64}, {112,64},{140,64},{168,64}, {196,64},{224,64},{252,64},
+    {0,96}, {28,96}, {56,96}, {84,96}, {112,96},{140,96},{168,96}, {196,96},{224,96},{252,96},
+    {0,128}, {28,128}, {56,128}, {84,128}, {112,128},{140,128},{168,128}, {196,128},{224,128},{252,128},
+    {0,160}, {28,160}, {56,160}, {84,160}, {112,160},{140,160},{168,160}, {196,160},{224,160},{252,160},
+    {0,192}, {28,192}, {56,192}, {84,192}, {112,192},{140,192},{168,192}, {196,192},{224,192},{252,192},
+    {0,224}, {28,224}, {56,224}, {84,224}, {112,224},{140,224},{168,224}, {196,224},{224,224},{252,224}
+};
 int main()
 {
     int fbfd;
@@ -249,11 +258,12 @@ int main()
     int first = 0;
     int x = 0, y = 0;
     int x_count = 0, y_count = 0;
+    int last_index = 0; //추가
 
-    int i = -1, temp = -1, but_count = 0;
+    int i = -1, temp = 0, but_count = 0;
     while (1) {
         i = DigitalRead();
-        if (index == 80 || y_count == 8) {
+        if (index == 80 || y_count == 8 || last_index == 80) { //clear
             for (j = 0; j < 320; j++) {
                 for (k = 0; k < 240; k++) {
                     offset = (k)*fbvar.xres + (j);
@@ -262,45 +272,49 @@ int main()
                 }
             }
             memset(array, 0, sizeof(array));
-            index = 0; x = 0; y = 0;
-            x_count = 0; y_count = 0; first = 0;
-            i = -1; temp = -1; but_count = 0;
+            index = 0; first = 0; x = 0; y = 0;
+            x_count = 0; y_count = 0; last_index = 0;
+            i = -1; temp = 0; but_count = 0;
         }
-        if (y_count != 7) {
+        if (y_count != 7) { //blink
             blink_b(fbvar, pfbdata, offset, pixel, x, y);
         }
-        i = DigitalRead();
+        i = DigitalRead(); //button
         if (i == 30) // left
         {
-            if ((x_count == 0 && y_count == 0) || (x == 0 && y == 0))
-                temp = -1;
+            if ((x_count == 0 && y_count == 0) || (x == 0 && y == 0)) {
+                but_count = 0; temp = -1; x = 0; y = 0; x_count = 0; y_count = 0;
+            }
             else {
+                temp = -1;
                 if (x == 0 || x_count == 0) {
-                    y -= 32; x = 251; index--; x_count = 9; y_count--;
+                    y -= 32; x = 252; index--; x_count = 9; y_count--;
                 }
                 else {
                     x -= 28; index--; x_count--;
                 }
             }
+            i = -1;
             delay(200);
         }
         if (i == 32) //right
         {
-            int current;
-            int y_line = 0, x_line = 0;
-            if ((x_count == 9 && y_count == 7) || (x == 251 && y == 223))
-                temp = -1;
+            if ((x_count == 9 && y_count == 7) || (x == 252 && y == 224)) {
+                but_count = 0; temp = -1; x = 252; y = 224; x_count = 9; y_count = 9;
+            }
             else {
+                temp = -1;
                 index++;
                 x_count++;
-                if (x_count == 10) { x = 0; y += 32; x_count = 0; y_count++; }
-                else x += 28;
+                x += 28;
+                if (x_count == 10 || x == 280) { x = 0; y += 32; x_count = 0; y_count++; }
             }
+            i = -1;
             delay(200);
         }
-        if (i != -1 && i != 30 && i != 31 && i != 32) {
-            if (i == temp) {
-                for (j = 0; j < 24; j++) {
+        if (i != -1 && i != 30 && i != 31 && i != 32) {  //. ~ y
+            if (i == temp) { 
+                for (j = 0; j < 24; j++) { //pixel clear
                     for (k = 0; k < 24; k++) {
                         offset = (y + k) * fbvar.xres + (x + j);
                         pixel = makepixel(0, 0, 0);
@@ -313,7 +327,7 @@ int main()
                 if (but_count == 3) but_count = 0;
                 i += but_count;
 
-                if (y_count == 7) {
+                if (y_count == 7 || y == 224) {
                     pixel_fn_last(fbvar, pfbdata, offset, pixel, x, y, i - 1); 
                     delay(500);
                 }
@@ -322,11 +336,12 @@ int main()
                     delay(500);
                 }
                 array[index] = i;
+                last_index = index; //추가
                 i = -1;
             }
             else if (first == 0 && index == 0) { //first
                 temp = i; first = 1;
-                if (y_count == 7) {
+                if (y_count == 7 || y == 224) {
                     pixel_fn_last(fbvar, pfbdata, offset, pixel, x, y, i - 1); 
                     delay(500);
                 }
@@ -335,27 +350,123 @@ int main()
                     delay(500);
                 }
                 array[index] = i;
+                last_index = index; //추가
                 i = -1;
+            }
+            else if (temp == -1) {
+                temp = i;
+                if (array[index] == 0) {
+                    if (y_count == 7 || y == 224) {
+                        pixel_fn_last(fbvar, pfbdata, offset, pixel, x, y, i - 1);
+                        delay(500);
+                    }
+                    else {
+                        pixel_fn(fbvar, pfbdata, offset, pixel, x, y, i - 1);
+                        delay(500);
+                    }
+                    array[index] = i;
+                    last_index = index; //추가
+                    but_count = 0;
+                }
+                else if (array[index] != 0) {
+                    int x_index = 0;
+                    if (x != 0) { x_index = (x / 28); }
+                    int y_index = 0;
+                    if (y != 0) { y_index = (y / 32); }
+                    int xy_index = (y_index * 10) + x_index;
+
+                    if (xy_index > 79) {
+                        last_index = 80; continue;
+                    }
+                    if(last_index >= 80) continue;
+
+                    for (j = last_index; j >= index; j--) {
+                        array[j + 1] = array[j];
+                    }
+                    for (j = index; j >= last_index; j++) {
+                        printf("%d  ", array[j]);
+                    }
+                    array[index] = i;
+                    last_index++;
+                    but_count = 0;
+                    if (last_index >= 80) continue;
+
+                    int X; int Y;
+                    for (j = index; j <= last_index; j++) {
+                        X = xy[xy_index][0]; Y = xy[xy_index][1];
+                        for (j = 0; j < 24; j++) {
+                            for (k = 0; k < 24; k++) {
+                                offset = (X + k) * fbvar.xres + (Y + j);
+                                pixel = makepixel(0, 0, 0);
+                                *(pfbdata + offset) = pixel;
+                            }
+                        }
+                        xy_index++;
+                        if (array[j] != 0) {
+                            pixel_fn(fbvar, pfbdata, offset, pixel, X, Y, array[j]-1);
+                        }
+                    }
+                }
             }
             else {
                 temp = i; index++;
                 if (index == 80) continue;
+
                 x_count++;
                 if (x_count == 10) { x = 0; y += 32; x_count = 0; y_count++; }
                 else x += 28;
 
                 if (y_count == 8) continue;
 
-                if (y_count == 7) {
-                    pixel_fn_last(fbvar, pfbdata, offset, pixel, x, y, i - 1); 
-                    delay(500);
+                if (array[index] == 0)
+                {
+                    if (y_count == 7 || y == 224) {
+                        pixel_fn_last(fbvar, pfbdata, offset, pixel, x, y, i - 1);
+                        delay(500);
+                    }
+                    else {
+                        pixel_fn(fbvar, pfbdata, offset, pixel, x, y, i - 1);
+                        delay(500);
+                    }
+                    array[index] = i;
+                    last_index = index;
+                    but_count = 0;
                 }
-                else {
-                    pixel_fn(fbvar, pfbdata, offset, pixel, x, y, i - 1); 
-                    delay(500);
+                else if (array[index] != 0) {
+                    int x_index = 0;
+                    if (x != 0) { x_index = (x / 28); }
+                    int y_index = 0;
+                    if (y != 0) { y_index = (y / 32); }
+                    int xy_index = (y_index * 10) + x_index;
+
+                    if (xy_index > 79) {
+                        last_index = 80; continue;
+                    }
+                    if (last_index >= 80) continue;
+                    for (j = last_index; j >= index; j--) {
+                        array[j + 1] = array[j];
+                    }
+                    array[index] = i;
+                    last_index++;
+                    but_count = 0;
+                    if (last_index >= 80) continue;
+
+                    int X; int Y;
+                    for (j = index; j <= last_index; j++) {
+                        X = xy[xy_index][0]; Y = xy[xy_index][1];
+                        for (j = 0; j < 24; j++) {
+                            for (k = 0; k < 24; k++) {
+                                offset = (y + k) * fbvar.xres + (x + j);
+                                pixel = makepixel(0, 0, 0);
+                                *(pfbdata + offset) = pixel;
+                            }
+                        }
+                        xy_index++;
+                        if (array[j] != 0) {
+                            pixel_fn(fbvar, pfbdata, offset, pixel, X, Y, array[j]);
+                        }
+                    }
                 }
-                array[index] = i;
-                but_count = 0;
             }
         }
         if (y_count != 7) {
@@ -365,5 +476,40 @@ int main()
     munmap(pfbdata, fbvar.xres * fbvar.yres * 16 / 8);
     close(fbfd);
     return 0;
+}
+
+//들어온게 i
+if (array[index] != 0) {
+    int x_index = 0; 
+    if (x != 0) { x_index = (x / 28); }
+    int y_index = 0;
+    if (y != 0) { y_index = (y / 32); }
+    int xy_index = (y_index * 10) + x_index;
+
+    if (xy_index > 79) {
+        last_index = 80; continue;
+    }
+ 
+    for (j = last_index; j >= index; j--) {
+        array[j + 1] = array[j];
+    }
+    array[index] = i;
+    last_index++;
+    if (last_index >= 80) continue;
+
+    int X; int Y;
+    for (j = index; j <= last_index; j++) {
+        X = xy[xy_index][0]; Y = xy[xy_index][1];
+        for (j = 0; j < 24; j++) {
+            for (k = 0; k < 24; k++) {
+                offset = (y + k) * fbvar.xres + (x + j);
+                pixel = makepixel(0, 0, 0);
+                *(pfbdata + offset) = pixel;
+            }
+        }
+        xy_index++;
+        if (temp == 0) continue;
+        pixel_fn_last(fbvar, pfbdata, offset, pixel, X, Y, array[j]);
+    }
 }
 
