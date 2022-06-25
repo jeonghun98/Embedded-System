@@ -363,7 +363,7 @@ int main()
     int i = 0, temp = -1, but_count = 0;
 
     while (1) {
-        if (index > 79) {
+        if (index > 79 || index_search(head) > 79) {
             for (j = 0; j < 320; j++) {
                 for (k = 0; k < 240; k++) {
                     offset = (k)*fbvar.xres + (j);
@@ -380,6 +380,7 @@ int main()
         if (index < 70) { //blink
             blink_b(fbvar, pfbdata, offset, pixel, xy[index][0], xy[index][1]);
         }
+        else { delay(80); }
         i = DigitalRead(); //button
         if (i == 30) // left
         {
@@ -456,7 +457,7 @@ int main()
                     pixel_fn(fbvar, pfbdata, offset, pixel, xy[p_index][0], xy[p_index][1], p->data - 1);
                 }
                 //print_list(head);
-            } but_count = 0; temp = -1; delay(200);
+            }delay(200);
         }
         if (i >= 1 && i <= 25) {
             //printf("%d\n", index);
@@ -494,6 +495,7 @@ int main()
                 }
                 else if (p != NULL) {
                     int endi = index_search(head) + 1;
+		    if (endi > 80) continue;
                     int deletei = index + 1;
                     for (; deletei <= endi; deletei++) {
                         if (deletei > 79) break;
@@ -521,8 +523,10 @@ int main()
         if (index < 70) { //blink
             blink_w(fbvar, pfbdata, offset, pixel, xy[index][0], xy[index][1]);
         }
+        else { delay(80); }
     }
     munmap(pfbdata, fbvar.xres * fbvar.yres * 16 / 8);
     close(fbfd);
     return 0;
 }
+
