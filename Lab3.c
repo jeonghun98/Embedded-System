@@ -123,13 +123,13 @@ int b[24][2] = {
     {20,23},{21,23},{22,23},{23,23}
 };
 
-typedef struct listnode{
+typedef struct listnode {
     int data;
     int index;
     struct listnode* link;
 }listnode;
 
-listnode* insert_first(listnode* head, int value,int index)
+listnode* insert_first(listnode* head, int value, int index)
 {
     listnode* p = (listnode*)malloc(sizeof(listnode));
     p->data = value;
@@ -150,7 +150,7 @@ listnode* insert(listnode* head, listnode* pre, int value, int index)
 listnode* insert_last(listnode* head, int value, int index)
 {
     if (head == NULL) {
-        head = insert_first(head, value,index); return head;
+        head = insert_first(head, value, index); return head;
     }
     listnode* p = (listnode*)malloc(sizeof(listnode));
     p->data = value;
@@ -184,7 +184,7 @@ void print_list(listnode* head)
 {
     listnode* p = head;
     for (; p != NULL; p = p->link)
-        printf("%d->", p->data);
+        printf("%d[%d]->", p->data, p->index);
     printf("NULL \n");
 }
 listnode* search_list(listnode* head, int x)
@@ -198,15 +198,40 @@ listnode* search_list(listnode* head, int x)
 }
 int list_len(listnode* head)
 {
-    int  i = 0; listnode* p = head;
+    int  i = -1; listnode* p = head;
     for (; p != NULL; p = p->link) i++;
     return i;
 }
 int index_search(listnode* head)
 {
-    int index = 0; listnode* p = head;
+    int index = -1; listnode* p = head;
     for (; p != NULL; p = p->link) index = p->index;
     return index;
+}
+listnode* search_pre_list(listnode* head, int x)
+{
+    listnode* p = head;
+    while (p != NULL) {
+        if (p->link == NULL) break;
+        if (p->link->index == x) return p;
+        p = p->link;
+    }
+    return NULL;
+}
+listnode* search_next_list(listnode* head, int x, int j)
+{
+    listnode* p = head;
+    listnode* q = head;
+    int i;
+    for (i = x; i <= j; i++) {
+        if (p == NULL) return NULL;
+        while (p != NULL) {
+            if (p->index == i) return p;
+            p = p->link;
+        }
+        q = q->link; p = q;
+    }
+    return NULL;
 }
 void blink_b(struct fb_var_screeninfo fbvar, unsigned short* pfbdata,
     int offset, unsigned short pixel, int x, int y)
@@ -239,22 +264,11 @@ void pixel_fn(struct fb_var_screeninfo fbvar, unsigned short* pfbdata,
     int L = length[eng];
     for (i = 0; i < L; i++) {
         X = alphabet_pixel[eng][i][0]; Y = alphabet_pixel[eng][i][1];
-        offset = (y + Y) * fbvar.xres + (x + X);
-        pixel = makepixel(255, 255, 255);
-        *(pfbdata + offset) = pixel;
-    }
-}
-void pixel_fn_last(struct fb_var_screeninfo fbvar, unsigned short* pfbdata,
-    int offset, unsigned short pixel, int x, int y, int eng)
-{
-    int i; int X; int Y;
-    int L = length[eng];
-    for (i = 0; i < L; i++) {
-        X = alphabet_pixel[eng][i][0]; Y = alphabet_pixel[eng][i][1];
-        if (Y > 15) continue;
-        offset = (y + Y) * fbvar.xres + (x + X);
-        pixel = makepixel(255, 255, 255);
-        *(pfbdata + offset) = pixel;
+        if ((y + Y) < 240) {
+            offset = (y + Y) * fbvar.xres + (x + X);
+            pixel = makepixel(255, 255, 255);
+            *(pfbdata + offset) = pixel;
+        }
     }
 }
 void initialize() {
@@ -274,21 +288,21 @@ void initialize() {
 }
 
 int DigitalRead() {
-    if (digitalRead(BT1) == 1) { return 1; }//0
-    if (digitalRead(BT2) == 1) { return 4; }//3
-    if (digitalRead(BT3) == 1) { return 7; }//6
-    if (digitalRead(BT4) == 1) { return 10; }//9
-    if (digitalRead(BT5) == 1) { return 13; }//12
-    if (digitalRead(BT6) == 1) { return 16; }//15
-    if (digitalRead(BT7) == 1) { return 19; }//18
-    if (digitalRead(BT8) == 1) { return 22; }//21
-    if (digitalRead(BT9) == 1) { return 25; }//24
+    if (digitalRead(BT1) == 1) { return 1; }
+    if (digitalRead(BT2) == 1) { return 4; }
+    if (digitalRead(BT3) == 1) { return 7; }
+    if (digitalRead(BT4) == 1) { return 10; }
+    if (digitalRead(BT5) == 1) { return 13; }
+    if (digitalRead(BT6) == 1) { return 16; }
+    if (digitalRead(BT7) == 1) { return 19; }
+    if (digitalRead(BT8) == 1) { return 22; }
+    if (digitalRead(BT9) == 1) { return 25; }
     if (digitalRead(LEFT) == 0) { return 30; }
     if (digitalRead(DEL) == 0) { return 31; }
     if (digitalRead(RIGHT) == 0) { return 32; }
     else return -1;
 }
-int xy[80][2] = {
+int xy[81][2] = {
     {0,0}, {28,0}, {56,0}, {84,0}, {112,0},{140,0},{168,0}, {196,0},{224,0},{252,0},
     {0,32}, {28,32}, {56,32}, {84,32}, {112,32},{140,32},{168,32}, {196,32},{224,32},{252,32},
     {0,64}, {28,64}, {56,64}, {84,64}, {112,64},{140,64},{168,64}, {196,64},{224,64},{252,64},
@@ -342,12 +356,12 @@ int main()
 
     listnode* head = NULL;
     listnode* p = NULL;
+    listnode* d = NULL;
 
-    int first = 0;
     int index = 0;
+    int first = 0;
+    int i = 0, temp = -1, but_count = 0;
 
-    int i = -1, temp = 0, but_count = 0;
-    int temp_i = 0;
     while (1) {
         if (index > 79) {
             for (j = 0; j < 320; j++) {
@@ -361,8 +375,7 @@ int main()
             for (j = 0; j < k; j++) {
                 head = delete_first(head);
             }
-            first = 0; index = 0;
-            i = -1; temp = 0; but_count = 0; temp_i = 0;
+            index = 0; i = 0; temp = -1; but_count = 0;
         }
         if (index < 70) { //blink
             blink_b(fbvar, pfbdata, offset, pixel, xy[index][0], xy[index][1]);
@@ -370,86 +383,123 @@ int main()
         i = DigitalRead(); //button
         if (i == 30) // left
         {
-            if (index == 0) { but_count = 0; temp = -1; temp_i = -1; }
+            if (index == 0) { but_count = 0; temp = -1; }
             else {
-                if(temp != -1) 
-                    head = insert_last(head, temp_i, index);
-                temp = -1; temp_i = -1; index--;
+                temp = -1; index--; but_count = 0;
             }
-            i = -1;
+            i = 0;
             delay(200);
 
         }
         if (i == 32) //right
         {
-            if (index == 79) {but_count = 0; temp = -1; temp_i = -1;}
+            if (index == 78) { but_count = 0; temp = -1; }
             else {
-                head = insert_last(head, temp_i, index);
-                temp = -1; temp_i = -1; index++;
+                temp = -1; index++; but_count = 0;
             }
-            i = -1;
+            i = 0;
             delay(200);
         }
-        if (i >= 1 && i <= 25) {
-            if (first == 0 && index == 0) { //first
-               temp = i; temp_i = i; first = 1;
-               if (index < 70) {
-                 pixel_fn(fbvar, pfbdata, offset, pixel, xy[index][0], xy[index][1], i - 1);
-                 delay(500);
-               }
-               else {
-                 pixel_fn_last(fbvar, pfbdata, offset, pixel, xy[index][0], xy[index][1], i - 1);
-                 delay(500);
-               }
-               i = -1;
+        if (i == 31) //delete
+        {
+            p = search_list(head, index);
+            if (p == NULL) {
+                int endi = index_search(head);
+                if (endi == -1) continue;
+                int deletei = index;
+                for (; deletei <= endi; deletei++) {
+                    if (deletei > 79) break;
+                    for (j = 0; j < 24; j++) {
+                        for (k = 0; k < 24; k++) {
+                            if (xy[deletei][1] + k > 240) continue;
+                            offset = (xy[deletei][1] + k) * fbvar.xres + (xy[deletei][0] + j);
+                            pixel = makepixel(0, 0, 0);
+                            *(pfbdata + offset) = pixel;
+                        }
+                    }
+                }
+                int p_index;
+                p = search_next_list(head, index + 1, endi);
+                if (p == NULL) continue;
+                for (; p != NULL; p = p->link) {
+                    p->index--;
+                    p_index = p->index;
+                    pixel_fn(fbvar, pfbdata, offset, pixel, xy[p_index][0], xy[p_index][1], p->data - 1);
+                }
+                //print_list(head);
             }
-            else if (i == temp) {
+            else if (p != NULL) {
+                int endi = index_search(head);
+                if (endi == -1) continue;
+                int deletei = index;
+                for (; deletei <= endi; deletei++) {
+                    if (deletei > 79) break;
+                    for (j = 0; j < 24; j++) {
+                        for (k = 0; k < 24; k++) {
+                            if (xy[deletei][1] + k > 240) continue;
+                            offset = (xy[deletei][1] + k) * fbvar.xres + (xy[deletei][0] + j);
+                            pixel = makepixel(0, 0, 0);
+                            *(pfbdata + offset) = pixel;
+                        }
+                    }
+                }
+                int p_index;
+                p = search_next_list(head, index + 1, endi);
+                d = search_pre_list(head, index);
+                if (d != NULL) { head = delete(head, d); }
+                else if (d == NULL) { head = delete_first(head); }
+                if (head == NULL) continue;
+                if (p == NULL) continue;
+                for (; p != NULL; p = p->link) {
+                    p->index--;
+                    p_index = p->index;
+                    pixel_fn(fbvar, pfbdata, offset, pixel, xy[p_index][0], xy[p_index][1], p->data - 1);
+                }
+                //print_list(head);
+            } but_count = 0; temp = -1; delay(200);
+        }
+        if (i >= 1 && i <= 25) {
+            //printf("%d\n", index);
+            if (index > 79) continue;
+            if (i == temp) {
                 for (j = 0; j < 24; j++) {
                     for (k = 0; k < 24; k++) {
+                        if (xy[index][1] + k > 239) continue;
                         offset = (xy[index][1] + k) * fbvar.xres + (xy[index][0] + j);
                         pixel = makepixel(0, 0, 0);
                         *(pfbdata + offset) = pixel;
                     }
                 }
-                temp = i; temp_i = i;
-
+                temp = i;
                 but_count++;
                 if (but_count == 3) but_count = 0;
                 i += but_count;
-                temp_i = i;
-                if (index < 70) {
-                    pixel_fn(fbvar, pfbdata, offset, pixel, xy[index][0], xy[index][1], i - 1);
-                    delay(500);
-                }
-                else {
-                    pixel_fn_last(fbvar, pfbdata, offset, pixel, xy[index][0], xy[index][1], i - 1);
-                    delay(500);
-                }
-                i = -1;
+                pixel_fn(fbvar, pfbdata, offset, pixel, xy[index][0], xy[index][1], i - 1);
+                delay(500);
+                p = search_list(head, index);
+                if (p != NULL) p->data = i;
+                i = 0;
             }
-            else if (temp == -1) {
+            else {
                 if (index > 79) continue;
-                temp = i; temp_i = i;
                 p = search_list(head, index);
                 if (p == NULL) {
-                    if (index < 70) {
-                        pixel_fn(fbvar, pfbdata, offset, pixel, xy[index][0], xy[index][1], i - 1);
-                        delay(500);
-                    }
-                    else {
-                        pixel_fn_last(fbvar, pfbdata, offset, pixel, xy[index][0], xy[index][1], i - 1);
-                        delay(500);
-                    }
-                    i = -1;
+                    pixel_fn(fbvar, pfbdata, offset, pixel, xy[index][0], xy[index][1], i - 1);
+                    delay(500);
+                    head = insert_last(head, i, index);
+                    if (first == 0 && index == 0) { first = 1; }
+                    else if (temp != -1) { index++; }
+                    temp = i; i = 0;
                     but_count = 0;
                 }
-                else {
-                    if (index > 78) continue;
+                else if (p != NULL) {
                     int endi = index_search(head) + 1;
-                    int deletei = index + 1;            
-                    for (; deletei < endi; deletei++) {
+                    int deletei = index + 1;
+                    for (; deletei <= endi; deletei++) {
+                        if (deletei > 79) break;
                         for (j = 0; j < 24; j++) {
                             for (k = 0; k < 24; k++) {
+                                if (xy[deletei][1] + k > 240) continue;
                                 offset = (xy[deletei][1] + k) * fbvar.xres + (xy[deletei][0] + j);
                                 pixel = makepixel(0, 0, 0);
                                 *(pfbdata + offset) = pixel;
@@ -462,59 +512,9 @@ int main()
                     for (; p != NULL; p = p->link) {
                         p->index++;
                         p_index = p->index;
-                        if (p_index < 70) {
-                            pixel_fn(fbvar, pfbdata, offset, pixel, xy[p_index][0], xy[p_index][1], p->data - 1);
-                        }
-                        else {
-                            pixel_fn_last(fbvar, pfbdata, offset, pixel, xy[p_index][0], xy[p_index][1], p->data - 1);
-                        }
-                    }
-                    i = -1; but_count = 0;
-                }
-                k = list_len(p);
-                for (j = 0; j < k; j++) {
-                    p = delete_first(p);
-                }
-            }
-            else {
-                head = insert_last(head, temp_i, index);
-                temp = i; temp_i = i; index++;
-                if (index > 79) continue;
-                p = search_list(head, index);
-                if (p == NULL) {
-                    if (index < 70) {
-                        pixel_fn(fbvar, pfbdata, offset, pixel, xy[index][0], xy[index][1], i - 1);
-                        delay(500);
-                    }
-                    else {
-                        pixel_fn_last(fbvar, pfbdata, offset, pixel, xy[index][0], xy[index][1], i - 1);
-                        delay(500);
-                    }i = -1;but_count = 0;
-                }
-                else {
-                    if (index > 78) continue;
-                    int j = index_search(head) + 1;
-                    int deletei = index + 1; int p_index;
-                    head = insert(head, p, i, index);
-                    for (p = p->link; p->index != j; p = p->link) {
-                        p->index++;
-                        p_index = p->index;
-                        for (j = 0; j < 24; j++) {
-                            for (k = 0; k < 24; k++) {
-                                offset = (xy[deletei][1] + k) * fbvar.xres + (xy[deletei][0] + j);
-                                pixel = makepixel(0, 0, 0);
-                                *(pfbdata + offset) = pixel;
-                            }
-                        }deletei++;
-                        if (deletei != p_index) continue;
-                        if (index < 70) {
-                            pixel_fn(fbvar, pfbdata, offset, pixel, xy[p_index][0], xy[p_index][1], p->data - 1);
-                        }
-                        else {
-                            pixel_fn_last(fbvar, pfbdata, offset, pixel, xy[p_index][0], xy[p_index][1], p->data - 1);
-                        }
-                    }
-                    i = -1; but_count = 0;
+                        pixel_fn(fbvar, pfbdata, offset, pixel, xy[p_index][0], xy[p_index][1], p->data - 1);
+                    }temp = i;
+                    i = 0; but_count = 0; index++;
                 }
             }
         }
@@ -526,4 +526,3 @@ int main()
     close(fbfd);
     return 0;
 }
-
