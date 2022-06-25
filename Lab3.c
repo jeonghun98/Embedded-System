@@ -284,29 +284,27 @@ int main()
                  if (but_count == 3) but_count = 0;
                  i += but_count;
 
-                 if (y_count != 7) {
-                     pixel_fn_last(fbvar, pfbdata, offset, pixel, x, y, i); delay(500);
+                 if (y_count == 7) {
+                     pixel_fn_last(fbvar, pfbdata, offset, pixel, x, y, i-1); delay(500);
                  }
                  else {
-                     pixel_fn(fbvar, pfbdata, offset, pixel, x, y, i); delay(500);
+                     pixel_fn(fbvar, pfbdata, offset, pixel, x, y, i-1); delay(500);
                  }
                  array[index] = i;
                  i = -1;
              }
-             else if(temp == -1){ //first
-                 temp = i;
+             else if(first == 0 && index == 0){ //first
+                 temp = i; first = 1;
                  if (y_count == 7) {
-                     pixel_fn_last(fbvar, pfbdata, offset, pixel, x, y, i); delay(500);
+                     pixel_fn_last(fbvar, pfbdata, offset, pixel, x, y, i-1); delay(500);
                  }
                  else {
-                     pixel_fn(fbvar, pfbdata, offset, pixel, x, y, i); delay(500);
+                     pixel_fn(fbvar, pfbdata, offset, pixel, x, y, i-1); delay(500);
                  }
                  array[index] = i;
                  i = -1;
              }
              else {
-                 printf("%d\n", array[index]);
-
                  temp = i; index++;
                  if (index == 80) continue;
                  x_count++;
@@ -316,13 +314,12 @@ int main()
                  if(y_count == 8) continue;
 
                  if (y_count == 7) {
-                     pixel_fn_last(fbvar, pfbdata, offset, pixel, x, y, i); delay(500);
+                     pixel_fn_last(fbvar, pfbdata, offset, pixel, x, y, i-1); delay(500);
                  }
                  else {
-                     pixel_fn(fbvar, pfbdata, offset, pixel, x, y, i); delay(500);
+                     pixel_fn(fbvar, pfbdata, offset, pixel, x, y, i-1); delay(500);
                  }
                  array[index] = i;
-                 printf("%d\n", array[index]);
                  but_count = 0;
              }
          }
