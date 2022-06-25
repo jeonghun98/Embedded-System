@@ -1,1 +1,2 @@
-# Embedded-system
+# Embedded-System
+Embedded System Lab
